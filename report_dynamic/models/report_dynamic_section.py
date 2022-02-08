@@ -74,7 +74,6 @@ class ReportDynamicSection(models.Model):
     )
     condition_domain = fields.Char(string="Domain Condition", default="[]")
     condition_python_preview = fields.Char("Preview", compute="_compute_condition")
-    show_in_report = fields.Boolean(compute="_compute_condition")
     model_id_model = fields.Char(
         string="Model _description", related="report_id.model_id.model"
     )
@@ -99,27 +98,17 @@ class ReportDynamicSection(models.Model):
                 self._get_proper_default_value(),
             )
 
-    @api.onchange("condition_python")
+    @api.depends("condition_python", "resource_ref")
     def _compute_condition(self):
         """Compute condition and preview"""
         for this in self:
-            this.condition_python_preview = this.show_in_report = False
-            condition_python = (
-                this.condition_python.strip() if this.condition_python else ""
-            )
-            condition_domain = (
-                this.condition_domain.strip() if this.condition_domain else "[]"
-            )
-            if not this.resource_ref_model_id:
-                continue
-            if not this.res_id:
+            this.condition_python_preview = False
+            condition_python = (this.condition_python or "").strip()
+            if not (this.resource_ref_model_id and this.res_id and this.resource_ref):
                 continue
             # search for a record for this.res_id and this.model_id
-            record = this.resource_ref.filtered_domain(safe_eval(condition_domain))
+            record = this.resource_ref
             if not record:
-                continue
-            if not condition_python:
-                this.show_in_report = True
                 continue
             try:
                 # Check if there are any syntax errors etc
@@ -130,11 +119,6 @@ class ReportDynamicSection(models.Model):
                 # and show debug info
                 this.condition_python_preview = str(e)
                 continue
-            is_valid = bool(this.condition_python_preview)
-            this.show_in_report = is_valid
-            if not is_valid:
-                # Preview is there, but condition is false
-                this.condition_python_preview = "False"
 
     def _get_proper_default_value(self):
         self.ensure_one()
@@ -209,11 +193,8 @@ class ReportDynamicSection(models.Model):
             try:
                 render_result = template.render(variables)
             except Exception as e:
-                raise UserError(
-                    _("Failed to render template %r using values %r")
-                    % (template, variables)
-                    + "\n\n{}: {}".format(type(e).__name__, str(e))
-                )
+                render_result = "<pre>Section {} could not be rendered. "
+                "Traceback information: {}</pre>".format(self.name, e)
             if render_result == u"False":
                 render_result = u""
             results[res_id] = render_result

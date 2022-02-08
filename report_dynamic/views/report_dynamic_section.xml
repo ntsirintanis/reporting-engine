@@ -27,7 +27,6 @@
                 <field name="condition_python" />
                 <field name="condition_domain" />
                 <field name="condition_python_preview" />
-                <field name="show_in_report" />
             </tree>
         </field>
     </record>
@@ -79,7 +78,7 @@
                             <field name="resource_ref_model_id" />
                             <field
                                 name="field_id"
-                                domain="[('model_id', '=', active_model),
+                                domain="[('model_id', '=', model_id_model),
                                             ('ttype', '!=', 'one2many'),
                                             ('ttype', '!=', 'many2many')]"
                             />

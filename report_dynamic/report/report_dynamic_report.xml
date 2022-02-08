@@ -36,9 +36,7 @@
                             <h2>Report</h2>
                             <h3>Content</h3>
                             <t t-foreach="doc.section_ids" t-as="s">
-                                <t t-if="s.show_in_report">
-                                    <t t-raw="s.dynamic_content" />
-                                </t>
+                                <t t-raw="s.dynamic_content" />
                             </t>
                         </div>
                     </t>
