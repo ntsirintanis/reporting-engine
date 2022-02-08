@@ -146,7 +146,6 @@
                                     <field name="condition_python" />
                                     <field name="condition_domain" />
                                     <field name="condition_python_preview" />
-                                    <field name="show_in_report" />
                                     <field name="is_paragraph" invisible="1" />
                                 </tree>
                             </field>

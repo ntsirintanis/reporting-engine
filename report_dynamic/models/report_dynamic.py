@@ -109,7 +109,6 @@ class ReportDynamic(models.Model):
 
     def action_preview_content(self):
         self.ensure_one()
-        self._validate_content()
         action = self.env.ref("report_dynamic.report_dynamic_document_preview").read(
             []
         )[0]
@@ -173,20 +172,3 @@ class ReportDynamic(models.Model):
     def _set_wrapper_report_id(self, template):
         self.ensure_one()
         return template.wrapper_report_id or self.env.company.external_report_layout_id
-
-    def _validate_content(self):
-        self.ensure_one()
-        # Force user to validate
-        # before previewing
-        for this in self.section_ids:
-            if not this.show_in_report:
-                continue
-            try:
-                this.dynamic_content
-            except Exception as e:
-                raise UserError(
-                    _(
-                        "Failed to compute dynamic content"
-                        " for section {}. Reason: {}"
-                    ).format(this.name or this.id, str(e))
-                )
