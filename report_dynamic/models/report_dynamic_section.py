@@ -73,7 +73,9 @@ class ReportDynamicSection(models.Model):
         string="Python Condition", help="Condition for rendering section",
     )
     condition_domain = fields.Char(string="Domain Condition", default="[]")
-    condition_python_preview = fields.Char("Preview", compute="_compute_condition")
+    condition_python_preview = fields.Char(
+        "Preview", compute="_compute_condition_python_preview"
+    )
     model_id_model = fields.Char(
         string="Model _description", related="report_id.model_id.model"
     )
@@ -98,27 +100,36 @@ class ReportDynamicSection(models.Model):
                 self._get_proper_default_value(),
             )
 
-    @api.depends("condition_python", "resource_ref")
-    def _compute_condition(self):
+    # this then needs to be an onchange, since user
+    # should be able to see preview after setting
+    # a condition, directly.
+    @api.onchange("condition_python")
+    def _compute_condition_python_preview(self):
         """Compute condition and preview"""
         for this in self:
             this.condition_python_preview = False
-            condition_python = (this.condition_python or "").strip()
             if not (this.resource_ref_model_id and this.res_id and this.resource_ref):
-                continue
-            # search for a record for this.res_id and this.model_id
-            record = this.resource_ref
-            if not record:
                 continue
             try:
                 # Check if there are any syntax errors etc
-                this.condition_python_preview = safe_eval(
-                    condition_python, {"object": record}
-                )
+                this.condition_python_preview = this._eval_condition_python()
             except Exception as e:
                 # and show debug info
                 this.condition_python_preview = str(e)
                 continue
+
+    def _eval_condition_python(self):
+        if not self.condition_python:
+            return True
+        condition_python = (self.condition_python or "").strip()
+        record = self.resource_ref
+        if not record:
+            return False
+        return safe_eval(condition_python, {"object": record})
+
+    def _eval_condition_domain(self):
+        condition_domain = (self.condition_domain or "[]").strip()
+        return self.resource_ref.filtered_domain(safe_eval(condition_domain))
 
     def _get_proper_default_value(self):
         self.ensure_one()
@@ -137,6 +148,9 @@ class ReportDynamicSection(models.Model):
         # a parent with two children
         h = self._get_header_object()
         for this in self:
+            if not (this._eval_condition_python() or this._eval_condition_domain()):
+                this.dynamic_content = ""
+                continue
             prerendered_content = this._prerender()
             content = this._render_template(
                 prerendered_content,
@@ -193,8 +207,10 @@ class ReportDynamicSection(models.Model):
             try:
                 render_result = template.render(variables)
             except Exception as e:
-                render_result = "<pre>Section {} could not be rendered. "
-                "Traceback information: {}</pre>".format(self.name, e)
+                render_result = (
+                    "<pre>Section {} could not be rendered. "
+                    "Traceback information: {}</pre>"
+                ).format(self.name, e)
             if render_result == u"False":
                 render_result = u""
             results[res_id] = render_result
