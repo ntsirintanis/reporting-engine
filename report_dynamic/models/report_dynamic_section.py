@@ -1,4 +1,5 @@
 import copy
+import traceback
 
 from odoo import _, api, fields, models, tools
 from odoo.exceptions import UserError
@@ -49,7 +50,7 @@ class ReportDynamicSection(models.Model):
 
     _order = "sequence"
 
-    name = fields.Char("Name", required=True)
+    name = fields.Char()
     sequence = fields.Integer("Sequence", default=10)
     content = fields.Html("Content")
     dynamic_content = fields.Html(
@@ -57,6 +58,10 @@ class ReportDynamicSection(models.Model):
     )
     report_id = fields.Many2one("report.dynamic", string="Report", ondelete="cascade")
     resource_ref = fields.Reference(related="report_id.resource_ref")
+    # duplicate the field to avoid including the same field twice in the view
+    resource_ref_preview = fields.Reference(
+        related="report_id.resource_ref", string="Preview Record", readonly=True
+    )
     res_id = fields.Integer(related="report_id.res_id")
     resource_ref_model_id = fields.Many2one("ir.model", related="report_id.model_id")
 
@@ -148,16 +153,19 @@ class ReportDynamicSection(models.Model):
         # a parent with two children
         h = self._get_header_object()
         for this in self:
-            if not (this._eval_condition_python() or this._eval_condition_domain()):
+            if not (this._eval_condition_python() and this._eval_condition_domain()):
                 this.dynamic_content = ""
                 continue
             prerendered_content = this._prerender()
-            content = this._render_template(
-                prerendered_content,
-                this.resource_ref_model_id.model,
-                this.res_id,
-                datas={"h": h},
-            )
+            try:
+                content = this._render_template(
+                    prerendered_content,
+                    this.resource_ref_model_id.model,
+                    this.res_id,
+                    datas={"h": h},
+                )
+            except Exception:
+                this.dynamic_content = "<pre>%s</pre>" % (traceback.format_exc())
             this.dynamic_content = content
 
     def _get_header_object(self):
@@ -206,11 +214,10 @@ class ReportDynamicSection(models.Model):
             variables["object"] = record
             try:
                 render_result = template.render(variables)
-            except Exception as e:
+            except Exception:
                 render_result = (
-                    "<pre>Section {} could not be rendered. "
-                    "Traceback information: {}</pre>"
-                ).format(self.name, e)
+                    "<pre>Section {} could not be rendered {}</pre>"
+                ).format(self.name or "(no name set)", traceback.format_exc())
             if render_result == u"False":
                 render_result = u""
             results[res_id] = render_result

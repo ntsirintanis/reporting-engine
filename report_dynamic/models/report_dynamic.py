@@ -11,6 +11,7 @@ class ReportDynamic(models.Model):
     # Inform the user about configured model_id
     # in template
     model_name = fields.Char(related="model_id.name")
+    model_model = fields.Char(related="model_id.model", string="Tech name of model_id")
     res_id = fields.Integer()
     resource_ref = fields.Reference(
         string="Target record",

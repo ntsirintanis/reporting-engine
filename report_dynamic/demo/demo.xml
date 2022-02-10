@@ -62,4 +62,8 @@
         <field name="expression_from">${object.name}</field>
         <field name="expression_to">Name: ${object.name}</field>
     </record>
+    <!-- Make Marc Demo a dynamic report reader-->
+    <record id="base.user_demo" model="res.users">
+        <field name="groups_id" eval="[(4,ref('group_report_dynamic_report_users'))]" />
+    </record>
 </odoo>

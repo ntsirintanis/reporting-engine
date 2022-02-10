@@ -14,6 +14,7 @@
         "security/res_groups.xml",
         "security/ir_rule.xml",
         "security/ir.model.access.csv",
+        "data/res_users.xml",
         "data/report_dynamic_alias.xml",
         "report/report_dynamic_report.xml",
         "views/report_dynamic.xml",
