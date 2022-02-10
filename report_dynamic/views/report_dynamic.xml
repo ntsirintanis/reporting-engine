@@ -23,10 +23,10 @@
                                 name="active"
                                 widget="boolean_button"
                                 options="{'terminology': {
-                            'string_true': 'ACTIVE',
-                            'hover_true': 'PAUSE',
-                            'string_false': 'HELP',
-                            'hover_false': 'FINISH'
+                            'string_true': 'Active',
+                            'hover_true': 'Archive',
+                            'string_false': 'Archived',
+                            'hover_false': 'Unarchive'
                         }}"
                             />
                         </button>
@@ -73,18 +73,20 @@
                                 <span
                                     attrs="{'invisible':['|', ('is_template', '=', False),('model_id', '=', False)]}"
                                 >
-                                    <strong> PREVIEW</strong>
+                                    <strong> (for preview only)</strong>
                                 </span>
                             </div>
+                            <field name="model_model" invisible="1" />
                             <field
                                 name="condition_domain_global"
                                 widget="domain"
-                                options="{'model': 'report.dynamic', 'in_dialog': True}"
+                                options="{'model': 'model_model', 'in_dialog': True}"
                                 attrs="{'invisible': [('is_template', '=', False)]}"
+                                help="When you have multiple templates for one model (eg. a contract for senior employees and another for juniors), this domain is used to determine the domain condition that decides for which records to choose this template (eg. [('employee_id.skill_level', '=', 'junior')])"
                             />
                             <field
                                 name="template_id"
-                                attrs="{'readonly': [('lock_date', '!=', False)]}"
+                                attrs="{'readonly': [('lock_date', '!=', False)], 'invisible': [('is_template', '=', True)]}"
                             />
                             <field
                                 name="is_template"
@@ -145,7 +147,6 @@
                                     <field name="name" />
                                     <field name="condition_python" />
                                     <field name="condition_domain" />
-                                    <field name="condition_python_preview" />
                                     <field name="is_paragraph" invisible="1" />
                                 </tree>
                             </field>

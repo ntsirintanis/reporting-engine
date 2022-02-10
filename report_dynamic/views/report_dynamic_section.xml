@@ -26,7 +26,6 @@
                 <field name="report_id" />
                 <field name="condition_python" />
                 <field name="condition_domain" />
-                <field name="condition_python_preview" />
             </tree>
         </field>
     </record>
@@ -59,17 +58,25 @@
                                 <page name="condition" string="Conditions">
                                     <group>
                                         <field name="condition_python" />
+                                        <field
+                                            name="condition_python_preview"
+                                            string="Python Condition Preview"
+                                        />
                                         <field name="model_id_model" invisible="1" />
                                         <field
                                             name="condition_domain"
                                             widget="domain"
                                             options="{'model': 'model_id_model', 'in_dialog': True}"
                                         />
-                                        <field name="condition_python_preview" />
-                                        <div>
-                                            <span>Placeholder for help</span>
-                                        </div>
+                                        <field name="resource_ref_preview" />
                                     </group>
+                                    <div>
+                                            <p
+                                        >You can add a condition to show or hide this block, either a Python expression that should evaluate to a boolean value (eg. "object.gender == 'male'" or "not object.parent_id") or a domain expression eg. [('name', '=ilike', 'John%')]).</p>
+
+<p
+                                        >For the domain expressions, you can arrive at a functional domain without having to type anything: simply open the popup with Matched records, then make a search for the records that you want to match. Select one or all of them with the checkbox and return to this dialog. The domain condition will have updated to a value that will match the rules that you followed in creating the selection. (Note: for this you need to have the OCA module web_widget_domain_editor_dialog installed).</p>
+                                        </div>
                                 </page>
                             </notebook>
                         </group>
@@ -81,6 +88,7 @@
                                 domain="[('model_id', '=', model_id_model),
                                             ('ttype', '!=', 'one2many'),
                                             ('ttype', '!=', 'many2many')]"
+                                options="{'no_open': True, 'no_create': True}"
                             />
                             <field name="sub_object_id" readonly="1" />
                             <field
@@ -90,6 +98,7 @@
                                             ('ttype', '!=', 'many2many')]"
                                 attrs="{'readonly':[('sub_object_id', '=', False)],
                                            'required':[('sub_object_id', '!=', False)]}"
+                                options="{'no_open': True, 'no_create': True}"
                             />
                             <field name="default_value" />
                             <field name="copyvalue" />
