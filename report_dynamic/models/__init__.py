@@ -3,3 +3,5 @@
 from . import report_dynamic
 from . import report_dynamic_section
 from . import report_dynamic_alias
+from ..wizards import report_dynamic_wizard
+from . import ir_model_fields
