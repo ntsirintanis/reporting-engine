@@ -2,8 +2,6 @@ from lxml import etree
 
 import odoo.tools as tools
 from odoo import api, models, _
-from odoo.exceptions import UserError
-from odoo.tools import safe_eval
 
 
 class ReportDynamicWizard(models.TransientModel):
@@ -229,7 +227,6 @@ class ReportDynamicWizard(models.TransientModel):
             result['arch'] = etree.tostring(root)
             result['fields'] = all_fields
         return result
-
 
     @api.model
     def create(self, vals):

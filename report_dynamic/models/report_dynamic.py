@@ -171,7 +171,7 @@ class ReportDynamic(models.Model):
         ):
             raise UserError(_("You cannot change model for this report"))
         if "template_id" in values and values.get("template_id"):
-            # if in an report we set a template
+            # if in a report we set a template
             template = self.browse(values.get("template_id"))
             self.resource_ref = template.resource_ref
             # Give a default to wrapper_report_id when
@@ -193,7 +193,7 @@ class ReportDynamic(models.Model):
         vals['ref_ir_act_window_id'] = action_obj.create({
             'name': button_name,
             'type': 'ir.actions.act_window',
-            'res_model': 'mass.report.wizard',
+            'res_model': 'report.dynamic',
             # 'src_model': src_obj,
             # 'view_type': 'form',
             'context': "{'mass_report_object' : %d}" % (self.id),
@@ -209,6 +209,5 @@ class ReportDynamic(models.Model):
         # We make sudo as any user with rights in this model should be able
         # to delete the action, not only admin
         self.mapped('ref_ir_act_window_id').sudo().unlink()
-        # self.mapped('ref_ir_value_id').sudo().unlink()
         return True
 
