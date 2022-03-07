@@ -39,15 +39,18 @@ class ReportDynamic(models.Model):
     active = fields.Boolean(default=True)
     is_template = fields.Boolean(default=False)
     lock_date = fields.Date()
-    ref_ir_act_window_id = fields.Many2one('ir.actions.act_window',
-                                           'Sidebar action',
-                                           readonly=True,
-                                           help="Sidebar action to make this "
-                                                "template available on "
-                                                "records of the related "
-                                                "document model.")
-    field_ids = fields.Many2many('ir.model.fields', 'contextual_field_rel',
-                                 'contextual_id', 'field_id', 'Fields')
+    ref_ir_act_window_id = fields.Many2one(
+        "ir.actions.act_window",
+        "Sidebar action",
+        readonly=True,
+        help="Sidebar action to make this "
+        "template available on "
+        "records of the related "
+        "document model.",
+    )
+    field_ids = fields.Many2many(
+        "ir.model.fields", "contextual_field_rel", "contextual_id", "field_id", "Fields"
+    )
 
     @api.model
     def _selection_target_model(self):
@@ -187,27 +190,28 @@ class ReportDynamic(models.Model):
     def create_action(self):
         self.ensure_one()
         vals = {}
-        action_obj = self.env['ir.actions.act_window']
-        src_obj = self.model_id.model
-        button_name = _('Dynamic Reporting (%s)') % self.name
-        vals['ref_ir_act_window_id'] = action_obj.create({
-            'name': button_name,
-            'type': 'ir.actions.act_window',
-            'res_model': 'report.dynamic',
-            # 'src_model': src_obj,
-            # 'view_type': 'form',
-            'context': "{'mass_report_object' : %d}" % (self.id),
-            'view_mode': 'form,tree',
-            'target': 'new',
-            'binding_type': 'action',# boris.gra
-            'binding_model_id': self.model_id.id,# boris.gra
-        }).id
+        action_obj = self.env["ir.actions.act_window"]
+        # self.model_id.model
+        button_name = _("Dynamic Reporting (%s)") % self.name
+        vals["ref_ir_act_window_id"] = action_obj.create(
+            {
+                "name": button_name,
+                "type": "ir.actions.act_window",
+                "res_model": "report.dynamic",
+                # 'src_model': src_obj,
+                # 'view_type': 'form',
+                "context": "{'mass_report_object' : %d}" % (self.id),
+                "view_mode": "form,tree",
+                "target": "new",
+                "binding_type": "action",  # boris.gra
+                "binding_model_id": self.model_id.id,  # boris.gra
+            }
+        ).id
         self.write(vals)
         return True
 
     def unlink_action(self):
         # We make sudo as any user with rights in this model should be able
         # to delete the action, not only admin
-        self.mapped('ref_ir_act_window_id').sudo().unlink()
+        self.mapped("ref_ir_act_window_id").sudo().unlink()
         return True
-
