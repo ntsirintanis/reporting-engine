@@ -19,7 +19,7 @@
                             type="object"
                             string="Add Report Button"
                             class="oe_inline oe_stat_button"
-                            attrs="{'invisible':[('ref_ir_act_window_id','!=',False)]}"
+                            attrs="{'invisible':['|',('ref_ir_act_window_id','!=',False),('is_template', '=', False)]}"
                             icon="fa-plus"
                             help="Display a button in the sidebar of related documents to open a composition wizard"
                         />
@@ -29,7 +29,7 @@
                             string="Remove Report Button"
                             class="oe_stat_button"
                             icon="fa-minus"
-                            attrs="{'invisible':[('ref_ir_act_window_id','=',False)]}"
+                            attrs="{'invisible':['|',('ref_ir_act_window_id','=',False),('is_template', '=', False)]}"
                             help="Remove the contextual action to use this template on related documents"
                             widget="statinfo"
                         />

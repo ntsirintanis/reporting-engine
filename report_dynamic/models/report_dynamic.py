@@ -192,23 +192,24 @@ class ReportDynamic(models.Model):
         vals = {}
         action_obj = self.env["ir.actions.act_window"]
         # self.model_id.model
-        button_name = _("Dynamic Reporting (%s)") % self.name
+        # It is a great idea to keep this as
+        # a window action, and not create a server action
+        # TODO: remove this from record level,
+        # and maybe add a config menu to set this up
         vals["ref_ir_act_window_id"] = action_obj.create(
             {
-                "name": button_name,
+                "name": "Dynamic Reporting",
                 "type": "ir.actions.act_window",
-                "res_model": "report.dynamic",
-                # 'src_model': src_obj,
-                # 'view_type': 'form',
+                "res_model": "wizard.report.dynamic",
                 "context": "{'mass_report_object' : %d}" % (self.id),
-                "view_mode": "form,tree",
+                "domain": [("model_id", "=", self.model_id.id)],
+                "view_mode": "form",
                 "target": "new",
-                "binding_type": "action",  # boris.gra
-                "binding_model_id": self.model_id.id,  # boris.gra
+                "binding_type": "action",
+                "binding_model_id": self.model_id.id,
             }
         ).id
         self.write(vals)
-        return True
 
     def unlink_action(self):
         # We make sudo as any user with rights in this model should be able

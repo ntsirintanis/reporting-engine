@@ -21,6 +21,7 @@
         "views/report_dynamic_section.xml",
         "views/report_dynamic_alias.xml",
         "wizards/wizard_lock_report.xml",
+        "wizards/wizard_report_dynamic.xml",
     ],
     "demo": ["demo/demo.xml"],
     "installable": True,
