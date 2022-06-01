@@ -108,9 +108,13 @@
                                 name="template_id"
                                 attrs="{'readonly': [('lock_date', '!=', False)], 'invisible': [('is_template', '=', True)]}"
                             />
+                            <!-- user might be tempted to turn a report into a template.
+                                                Not going to happen
+                            -->
                             <field
                                 name="is_template"
                                 groups="report_dynamic.group_report_dynamic_template_editors"
+                                attrs="{'invisible': [('template_id', '!=', False)]}"
                             />
                             <button
                                 name="action_wizard_lock_report"
@@ -189,6 +193,18 @@
             </form>
         </field>
     </record>
+
+    <record id="report_dynamic_tree" model="ir.ui.view">
+        <field name="name">report.dynamic.tree</field>
+        <field name="model">report.dynamic</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name" readonly="True" />
+                <field name="model_id" readonly="True" />
+            </tree>
+        </field>
+    </record>
+
     <!-- action and menu for reports-->
     <record id="report_dynamic_action" model="ir.actions.act_window">
         <field name="name">Dynamic Reports</field>

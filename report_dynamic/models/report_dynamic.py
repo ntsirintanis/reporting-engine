@@ -191,11 +191,6 @@ class ReportDynamic(models.Model):
         self.ensure_one()
         vals = {}
         action_obj = self.env["ir.actions.act_window"]
-        # self.model_id.model
-        # It is a great idea to keep this as
-        # a window action, and not create a server action
-        # TODO: remove this from record level,
-        # and maybe add a config menu to set this up
         vals["ref_ir_act_window_id"] = action_obj.create(
             {
                 "name": "Dynamic Reporting",

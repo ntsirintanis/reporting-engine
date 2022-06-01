@@ -1,8 +1,9 @@
-from odoo import fields, models
+from odoo import _, fields, models
 
 
 class WizardReportDynamic(models.TransientModel):
     _name = "wizard.report.dynamic"
+    _description = "Select template for report for record(s)"
 
     template_id = fields.Many2one(
         "report.dynamic",
@@ -21,9 +22,13 @@ class WizardReportDynamic(models.TransientModel):
         for record in records:
             if record._name != self.template_id.model_model:
                 continue
-            # TODO: We need a name for the report, in record.name is not a valid field
+            # check that the record has a name field
+            if hasattr(record, "name"):
+                record_name = record.name
+            else:
+                record_name = _("Model {}, id {}").format(record._name, record.id)
             report = self.template_id.copy(
-                {"is_template": False, "res_id": record.id, "name": record.name}
+                {"is_template": False, "res_id": record.id, "name": record_name}
             )
             reports += report
         return {

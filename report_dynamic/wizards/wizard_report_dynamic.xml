@@ -6,7 +6,7 @@
         <field name="arch" type="xml">
             <form string="Template">
                 <group>
-                    <field name="template_id" create="false" edit="false" />
+                    <field name="template_id" options="{'no_create': True}" />
                     <field name="model_name" />
                 </group>
                 <footer>
