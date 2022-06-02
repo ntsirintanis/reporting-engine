@@ -28,7 +28,12 @@ class WizardReportDynamic(models.TransientModel):
             else:
                 record_name = _("Model {}, id {}").format(record._name, record.id)
             report = self.template_id.copy(
-                {"is_template": False, "res_id": record.id, "name": record_name}
+                {
+                    "is_template": False,
+                    "name": record_name,
+                    "res_id": record.id,
+                    "template_id": self.template_id.id,
+                }
             )
             reports += report
         return {

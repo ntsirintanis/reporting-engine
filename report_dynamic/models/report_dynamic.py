@@ -49,15 +49,28 @@ class ReportDynamic(models.Model):
         models = self.env["ir.model"].search([])
         return [(model.model, model.name) for model in models]
 
-    @api.depends("model_id", "res_id")
+    @api.depends("model_id", "res_id", "template_id")
     def _compute_resource_ref(self):
         for this in self:
-            if this.model_id:
+            model = (
+                this.model_id.model
+                if this.is_template
+                else this.template_id.model_id.model
+            )
+            if model:
+                # Tackle the problem of non-existing sample record
+                sample_record = self.env[model].search([], limit=1)
+                if not sample_record:
+                    raise UserError(
+                        _(
+                            "No sample record exists for Model {}. "
+                            "Please create one before proceeding"
+                        ).format(model)
+                    )
                 # we need to give a default to id part of resource_ref
                 # otherwise it is not editable
                 this.resource_ref = "{},{}".format(
-                    this.model_id.model,
-                    this.res_id or self.env[this.model_id.model].search([], limit=1).id,
+                    model, this.res_id or sample_record.id,
                 )
             else:
                 this.resource_ref = False
@@ -141,7 +154,7 @@ class ReportDynamic(models.Model):
     def create(self, values):
         records = super().create(values)
         for this in records:
-            if this.template_id.resource_ref:
+            if this.template_id.resource_ref and not this.res_id:
                 this.resource_ref = this.template_id.resource_ref
                 # Give a default to wrapper_report_id when
                 # user sets template_id
