@@ -18,6 +18,7 @@ class ReportDynamic(models.Model):
         selection="_selection_target_model",
         compute="_compute_resource_ref",
         inverse="_inverse_resource_ref",
+        store=True,
     )
     wrapper_report_id = fields.Many2one("ir.ui.view", domain="[('type', '=', 'qweb')]")
     template_id = fields.Many2one(
@@ -43,6 +44,11 @@ class ReportDynamic(models.Model):
         "ir.model.fields", "contextual_field_rel", "contextual_id", "field_id", "Fields"
     )
     window_action_exists = fields.Boolean(compute="_compute_window_action_exists")
+    group_by_record_name = fields.Char(
+        compute="_compute_group_by_record_name",
+        store=True,
+        help="Computed field for grouping by record name in search view",
+    )
 
     @api.model
     def _selection_target_model(self):
@@ -58,8 +64,16 @@ class ReportDynamic(models.Model):
                 else this.template_id.model_id.model
             )
             if model:
+                # Return a meaningful message anytime this breaks
+                try:
+                    sample_record = self.env[model].search([], limit=1)
+                except Exception as e:
+                    raise UserError(
+                        _("Model {} is not applicable for report. Reason: {}").format(
+                            model, str(e)
+                        )
+                    )
                 # Tackle the problem of non-existing sample record
-                sample_record = self.env[model].search([], limit=1)
                 if not sample_record:
                     raise UserError(
                         _(
@@ -75,6 +89,16 @@ class ReportDynamic(models.Model):
             else:
                 this.resource_ref = False
 
+    def _inverse_resource_ref(self):
+        for this in self:
+            if this.resource_ref:
+                this.res_id = this.resource_ref.id
+                this.model_id = (
+                    self.env["ir.model"]
+                    .search([("model", "=", this.resource_ref._name)], limit=1)
+                    .id
+                )
+
     def _compute_window_action_exists(self):
         for this in self:
             this.window_action_exists = bool(
@@ -86,15 +110,19 @@ class ReportDynamic(models.Model):
                 )
             )
 
-    def _inverse_resource_ref(self):
+    @api.depends("resource_ref")
+    def _compute_group_by_record_name(self):
         for this in self:
-            if this.resource_ref:
-                this.res_id = this.resource_ref.id
-                this.model_id = (
-                    self.env["ir.model"]
-                    .search([("model", "=", this.resource_ref._name)], limit=1)
-                    .id
-                )
+            this.group_by_record_name = ""
+            if this.is_template:
+                continue
+            if hasattr(this.resource_ref, "name"):
+                this.group_by_record_name = this.resource_ref.name
+                continue
+            # TODO: this is plainly wrong, fix
+            this.group_by_record_name = _("{} - {}").format(
+                this.resource_ref._name, this.resource_ref.id
+            )
 
     def get_template_xml_id(self):
         self.ensure_one()
