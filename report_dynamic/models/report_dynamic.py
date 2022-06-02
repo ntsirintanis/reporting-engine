@@ -39,18 +39,10 @@ class ReportDynamic(models.Model):
     active = fields.Boolean(default=True)
     is_template = fields.Boolean(default=False)
     lock_date = fields.Date()
-    ref_ir_act_window_id = fields.Many2one(
-        "ir.actions.act_window",
-        "Sidebar action",
-        readonly=True,
-        help="Sidebar action to make this "
-        "template available on "
-        "records of the related "
-        "document model.",
-    )
     field_ids = fields.Many2many(
         "ir.model.fields", "contextual_field_rel", "contextual_id", "field_id", "Fields"
     )
+    window_action_exists = fields.Boolean(compute="_compute_window_action_exists")
 
     @api.model
     def _selection_target_model(self):
@@ -69,6 +61,17 @@ class ReportDynamic(models.Model):
                 )
             else:
                 this.resource_ref = False
+
+    def _compute_window_action_exists(self):
+        for this in self:
+            this.window_action_exists = bool(
+                self.env["ir.actions.act_window"].search_count(
+                    [
+                        ("res_model", "=", "wizard.report.dynamic"),
+                        ("binding_model_id", "=", this.model_id.id),
+                    ]
+                )
+            )
 
     def _inverse_resource_ref(self):
         for this in self:
@@ -182,6 +185,14 @@ class ReportDynamic(models.Model):
             self.wrapper_report_id = self._set_wrapper_report_id(template)
         return super().write(values)
 
+    def unlink(self):
+        for this in self:
+            if not this.is_template:
+                continue
+            if this.window_action_exists:
+                this.unlink_action()
+        return super().unlink()
+
     def _set_wrapper_report_id(self, template):
         self.ensure_one()
         return template.wrapper_report_id or self.env.company.external_report_layout_id
@@ -189,9 +200,11 @@ class ReportDynamic(models.Model):
     # Contextual action for dynamic reports
     def create_action(self):
         self.ensure_one()
-        vals = {}
-        action_obj = self.env["ir.actions.act_window"]
-        vals["ref_ir_act_window_id"] = action_obj.create(
+        if self.window_action_exists:
+            return
+        if not self.model_id:
+            return
+        self.env["ir.actions.act_window"].create(
             {
                 "name": "Dynamic Reporting",
                 "type": "ir.actions.act_window",
@@ -203,11 +216,14 @@ class ReportDynamic(models.Model):
                 "binding_type": "action",
                 "binding_model_id": self.model_id.id,
             }
-        ).id
-        self.write(vals)
+        )
 
     def unlink_action(self):
         # We make sudo as any user with rights in this model should be able
         # to delete the action, not only admin
-        self.mapped("ref_ir_act_window_id").sudo().unlink()
-        return True
+        self.env["ir.actions.act_window"].search(
+            [
+                ("res_model", "=", "wizard.report.dynamic"),
+                ("binding_model_id", "=", self.model_id.id),
+            ]
+        ).sudo().unlink()

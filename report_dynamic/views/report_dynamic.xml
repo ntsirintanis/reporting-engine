@@ -13,13 +13,13 @@
                         attrs="{'invisible': [('active', '=', True)]}"
                     />
                     <div class="oe_button_box" name="button_box">
-                        <field name="ref_ir_act_window_id" invisible="1" />
+                        <field name="window_action_exists" invisible="1" />
                         <button
                             name="create_action"
                             type="object"
                             string="Add Report Button"
                             class="oe_inline oe_stat_button"
-                            attrs="{'invisible':['|',('ref_ir_act_window_id','!=',False),('is_template', '=', False)]}"
+                            attrs="{'invisible':['|',('window_action_exists','=',True),('is_template', '=', False)]}"
                             icon="fa-plus"
                             help="Display a button in the sidebar of related documents to open a composition wizard"
                         />
@@ -29,7 +29,7 @@
                             string="Remove Report Button"
                             class="oe_stat_button"
                             icon="fa-minus"
-                            attrs="{'invisible':['|',('ref_ir_act_window_id','=',False),('is_template', '=', False)]}"
+                            attrs="{'invisible':['|',('window_action_exists','=',False),('is_template', '=', False)]}"
                             help="Remove the contextual action to use this template on related documents"
                             widget="statinfo"
                         />
