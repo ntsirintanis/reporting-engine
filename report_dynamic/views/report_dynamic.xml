@@ -33,6 +33,21 @@
                             help="Remove the contextual action to use this template on related documents"
                             widget="statinfo"
                         />
+                        <field name="section_ids" invisible="1" />
+                        <button
+                            type="object"
+                            name="action_view_section"
+                            class="oe_stat_button"
+                            icon="fa-file-text-o"
+                            attrs="{'invisible': [('section_count', '=', 0)]}"
+                            groups="base.group_user"
+                        >
+                            <field
+                                name="section_count"
+                                widget="statinfo"
+                                string="Sections"
+                            />
+                        </button>
                         <button
                             name="action_toggle_active"
                             type="object"
@@ -48,21 +63,6 @@
                             'string_false': 'Archived',
                             'hover_false': 'Unarchive'
                         }}"
-                            />
-                        </button>
-                        <field name="section_ids" invisible="1" />
-                        <button
-                            type="object"
-                            name="action_view_section"
-                            class="oe_stat_button"
-                            icon="fa-file-text-o"
-                            attrs="{'invisible': [('section_count', '=', 0)]}"
-                            groups="base.group_user"
-                        >
-                            <field
-                                name="section_count"
-                                widget="statinfo"
-                                string="Sections"
                             />
                         </button>
                     </div>
