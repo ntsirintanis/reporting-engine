@@ -260,7 +260,6 @@ class ReportDynamic(models.Model):
             }
         )
 
-
     def unlink_action(self):
         # We make sudo as any user with rights in this model should be able
         # to delete the action, not only admin

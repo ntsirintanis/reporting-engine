@@ -5,7 +5,7 @@
     "name": "Report Dynamic",
     "version": "13.0.1.0.0",
     "category": "Report",
-    "author": "Sunflower IT",
+    "author": "Sunflower IT, Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/reporting-engine",
     "license": "AGPL-3",
     "summary": "Dynamic Report Builder",
