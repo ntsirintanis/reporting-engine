@@ -99,16 +99,17 @@ class ReportDynamic(models.Model):
                     .id
                 )
 
+    def get_window_actions(self):
+        return self.env["ir.actions.act_window"].search(
+            [
+                ("res_model", "=", "wizard.report.dynamic"),
+                ("binding_model_id", "=", self.model_id.id),
+            ]
+        )
+
     def _compute_window_action_exists(self):
         for this in self:
-            this.window_action_exists = bool(
-                self.env["ir.actions.act_window"].search_count(
-                    [
-                        ("res_model", "=", "wizard.report.dynamic"),
-                        ("binding_model_id", "=", this.model_id.id),
-                    ]
-                )
-            )
+            this.window_action_exists = bool(this.get_window_actions())
 
     @api.depends("resource_ref")
     def _compute_group_by_record_name(self):
@@ -258,6 +259,7 @@ class ReportDynamic(models.Model):
                 "binding_model_id": self.model_id.id,
             }
         )
+
 
     def unlink_action(self):
         # We make sudo as any user with rights in this model should be able
