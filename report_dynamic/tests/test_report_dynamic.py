@@ -10,20 +10,96 @@ class TestWizardReportDynamic(common.TransactionCase):
         # use the demodata.
         self.RD_template = self.env.ref("report_dynamic.demo_report_2")
         self.RD_report = self.env.ref("report_dynamic.demo_report_1")
-        self.section1 = self.env.ref("report_dynamic.demo_section_1")
-        self.section2 = self.env.ref("report_dynamic.demo_section_2")
-        self.alias1 = self.env.ref("report_dynamic.demo_alias_1")
-        self.alias2 = self.env.ref("report_dynamic.demo_alias_2")
         self.demouser = self.env.ref("base.user_demo")
 
-    def test_action_generate_reports_form(self):
-        wiz_model = self.env["wizard.report.dynamic"]
+    def test_report_crud_operations(self):
+        # test inverse write on resource_ref
+        res_partner_model = self.env.ref("base.model_res_partner")
+        self.RD_report.write(
+            {"resource_ref": "{},{}".format(res_partner_model.model, self.demouser.id)}
+        )
+        self.assertEquals(self.RD_report.res_id, self.RD_report.resource_ref.id)
+        self.assertEquals(self.RD_report.model_id, res_partner_model)
+        # Check for models with existing records in db
+        new_model = self.env.ref("base.model_base_language_install")
+        with self.assertRaises(UserError) as e:
+            BLI_template = self.env["report.dynamic"].create(
+                {
+                    "name": "language template",
+                    "resource_ref": self.env["base.language.install"]
+                    .search([], limit=1)
+                    .id,
+                    "model_id": new_model.id,
+                    "is_template": True,
+                }
+            )
+            BLI_report = self.env["report.dynamic"].create(
+                {"name": "language template", "template_id": BLI_template.id}
+            )
+            self.env["base.language.install"].search([]).unlink()
+            BLI_report._compute_resource_ref()
+        self.assertEqual(
+            e.exception.name,
+            "No sample record exists for Model base.language.install. "
+            "Please create one before proceeding",
+        )
+        # Check that you can't switch a template
+        # with reports connected to it
+        with self.assertRaises(UserError) as e:
+            BLI_template.write({"is_template": False})
+        self.assertEqual(
+            e.exception.name,
+            "You cannot switch this template because it has reports connected to it",
+        )
+        # Check that you can't change a template's model
+        # with reports connected to it
+        with self.assertRaises(UserError) as e:
+            BLI_template.write(
+                {
+                    "model_id": self.env["ir.model"].search(
+                        [("id", "!=", BLI_template.model_id.id)], limit=1
+                    )
+                }
+            )
+        self.assertEqual(
+            e.exception.name, "You cannot change model for this report",
+        )
+        # Check that as soon as we switch template for a report,
+        # resource_ref gets recomputed
+        self.assertEqual(BLI_report.resource_ref, BLI_template.resource_ref)
+        BLI_report.write({"template_id": self.RD_template.id})
+        self.assertEqual(BLI_report.resource_ref, self.RD_template.resource_ref)
+
+    def test_window_action(self):
         #  Action should not exist.
-        self.assertEquals(self.RD_report.window_action_exists, False)
+        self.assertFalse(self.RD_report.window_action_exists)
         self.RD_report.create_action()
         self.RD_report._compute_window_action_exists()
-        self.assertEquals(self.RD_report.window_action_exists, True)
+        self.assertTrue(self.RD_report.window_action_exists)
+        # Call create_action again, and see that nothing really happens
+        self.RD_report.create_action()
+        self.assertEqual(len(self.RD_template.get_window_actions()), 1)
+        # unlink action
+        self.RD_template.unlink_action()
+        self.assertFalse(self.RD_report.window_action_exists)
+        self.RD_template.create_action()
+        # unlink the reports and see that window action is there
+        self.RD_report.unlink()
+        self.assertTrue(self.RD_template.window_action_exists)
+        # unlink the template and see that the action is gone
+        this_model = self.RD_template.model_id
+        self.RD_template.unlink()
+        self.assertFalse(
+            self.env["ir.actions.act_window"].search(
+                [
+                    ("res_model", "=", "wizard.report.dynamic"),
+                    ("binding_model_id", "=", this_model.id),
+                ]
+            )
+        )
 
+    def test_wizards(self):
+        wiz_model = self.env["wizard.report.dynamic"]
         # TODO emulate form
         wiz = wiz_model.create({"template_id": self.RD_template.id})
         ctx = {
@@ -44,61 +120,13 @@ class TestWizardReportDynamic(common.TransactionCase):
         wiz_lock = self.env["wizard.lock.report"].create({"report_id": report.id})
         wiz_lock.action_lock_report()
         self.assertEquals(report.lock_date, fields.Date.today())
-        # test inverse write on resource_ref
-        res_partner_model = self.env.ref("base.model_res_partner")
-        self.RD_report.write(
-            {"resource_ref": "{},{}".format(res_partner_model.model, self.demouser.id)}
-        )
-        self.assertEquals(self.RD_report.res_id, self.RD_report.resource_ref.id)
-        self.assertEquals(self.RD_report.model_id, res_partner_model)
-        # final change model_id and t delete all records so  no sample record exists
-        # (must be on template or will default to template.model_id
-        new_model = self.env.ref("base.model_base_language_install")
-        with self.assertRaises(UserError) as e:
-            BLI_template = self.env["report.dynamic"].create(
-                {
-                    "name": "language template",
-                    "resource_ref": self.env["base.language.install"]
-                    .search([], limit=1)
-                    .id,
-                    "model_id": new_model.id,
-                    "is_template": True,
-                }
-            )
-            BLI_report = self.env["report.dynamic"].create(
-                {
-                    "name": "language template",
-                    "resource_ref": self.env["base.language.install"]
-                    .search([], limit=1)
-                    .id,
-                    "template_id": BLI_template.id,
-                }
-            )
-            self.env["base.language.install"].search([]).unlink()
-            BLI_report._compute_resource_ref()
-        self.assertEqual(
-            e.exception.name,
-            "No sample record exists for Model base.language.install. "
-            "Please create one before proceeding",
-        )
-        # testing the section methods
-        content1 = self.section1._compute_dynamic_content()
-        content2 = self.section2._compute_dynamic_content()
-        self.assertEqual(content1, None)
-        partner_startswith_d = self.env["res.partner"].create({"name": "Dperson"})
-        self.RD_template.write(
-            {
-                "resource_ref": "{},{}".format(
-                    res_partner_model.model, partner_startswith_d.id
-                )
-            }
-        )
-        self.RD_report.write(
-            {
-                "resource_ref": "{},{}".format(
-                    res_partner_model.model, partner_startswith_d.id
-                )
-            }
-        )
-        content2 = self.section2._compute_dynamic_content()
-        self.assertEqual(content2, None)
+
+    def test_default_wrapper(self):
+        self.RD_template.wrapper_report_id = False
+        self.assertEqual(self.RD_template.get_template_xml_id(), "web.external_layout")
+
+    def test_active(self):
+        # Test active/archived
+        self.assertTrue(self.RD_template.active)
+        self.RD_template.action_toggle_active()
+        self.assertFalse(self.RD_template.active)
